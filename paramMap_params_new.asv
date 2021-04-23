@@ -1,8 +1,8 @@
 function [area_val,diam_val,flowPerHeartCycle_val,maxVel_val,PI_val,RI_val,flowPulsatile_val,...
     velMean_val,VplanesAllx,VplanesAlly,VplanesAllz,r,timeMIPcrossection,segmentFull,...
-    vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes, ...
+    vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes ...
     area_valK,diam_valK,flowPerHeartCycle_valK,maxVel_valK,PI_valK,RI_valK,flowPulsatile_valK,...
-    velMean_valK,segmentFullK,bnumMeanFlowK,bnumStdvFlowK,StdvFromMeanK] ...
+    velMean_valK,segmentFullK,
     = paramMap_params_new(filetype,branchList,matrix,timeMIP,vMean, ...
     BGPCdone,directory,nframes,res,MAG,IDXstart,IDXend,handles)
 %PARAMMAP_PARAMS_NEW: Create tangent planes and calculate hemodynamics
@@ -254,7 +254,6 @@ for n = 1:size(Tangent_V,1)
     end
         
     % Remove all segments not closest to the center
-    SE = strel('square', 4);
     segment = imerode(segment,SE);     
     s = regionprops(logical(segment),'centroid');    
     CenterIm = [size(segment,1)/2,size(segment,2)/2];
@@ -286,9 +285,8 @@ for n = 1:size(Tangent_V,1)
     [~,CenIdx]  = min(DisCen); %find centroid closest to center
     
     % Vessel area measurements
-    dArea = (res/10)^2; %pixel size (cm^2)
-    area_valK(n) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
-    area_valK = area_valK';
+    dAreaK = (res/10)^2; %pixel size (cm^2)
+    area_valK(n) = sum(segment(:))*dAreaK*((2*r+1)/(2*r*InterpVals+1))^2;
     
     segmentFullK(n,:) = segment(:);
     
@@ -318,9 +316,9 @@ velPulsatile_val = zeros(size(area_val,1),nframes);
 bnumMeanFlow = zeros(max(branchList(:,4)),1);
 bnumStdvFlow = zeros(max(branchList(:,4)),1);
 % Kmeans
-flowPulsatile_valK = zeros(size(area_valK,1),nframes);
-maxVelFrameK = zeros(size(area_valK,1),nframes);
-velPulsatile_valK = zeros(size(area_valK,1),nframes);
+flowPulsatile_val = zeros(size(area_valK,1),nframes);
+maxVelFrame = zeros(size(area_valK,1),nframes);
+velPulsatile_val = zeros(size(area_valK,1),nframes);
 bnumMeanFlowK = zeros(max(branchList(:,4)),1);
 bnumStdvFlowK = zeros(max(branchList(:,4)),1);
      
