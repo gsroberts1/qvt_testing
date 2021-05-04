@@ -310,6 +310,10 @@ for n = 1:size(Tangent_V,1)
     %diam_val(n) = 2*sqrt(area_val(n)/pi); %equivalent diameter
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
+    %%%%%%%%%%% DAHAN %%%%%%%%%%%%%%%%%
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
 end
 area_valK = area_valK';
 clear cdSLICE magSLICE temp segment weightIMAGE dArea L LabUse CenIdx Num

@@ -93,6 +93,7 @@ global VplanesAllx VplanesAlly VplanesAllz imageData caseFilePath
 global area_valK diam_valK flowPerHeartCycle_valK maxVel_valK
 global velMean_valK PI_valK RI_valK flowPulsatile_valK segmentFullK
 global bnumMeanFlowK bnumStdvFlowK StdvFromMeanK SummaryNameK SavePathK
+global SEGcrossection
 
 % Initial Variables
 hfull = handles;
@@ -157,6 +158,7 @@ if  fileIndx > 1  %if a pre-processed case is selected
     bnumMeanFlow = data_struct.bnumMeanFlow; %mean flow along branches
     bnumStdvFlow = data_struct.bnumStdvFlow; %stdv flow of branches
     StdvFromMean = data_struct.StdvFromMean; %CoV along branches
+    SEGcrossection = data_struct.SEGcrossection;
     
     VplanesAllx = Vel_Time_Res.VplanesAllx; %TR vel planes (uninterped)
     VplanesAlly = Vel_Time_Res.VplanesAlly;
@@ -175,7 +177,7 @@ else
             timeMIPcrossection,segment1,vTimeFrameave,MAGcrossection, imageData, ...
             area_valK,diam_valK,flowPerHeartCycle_valK,maxVel_valK,PI_valK,RI_valK,flowPulsatile_valK,...
             velMean_valK,segmentFullK,bnumMeanFlowK,bnumStdvFlowK,StdvFromMeanK, ...
-            bnumMeanFlow,bnumStdvFlow,StdvFromMean] ...
+            bnumMeanFlow,bnumStdvFlow,StdvFromMean,SEGcrossection] ...
             = loadpcvipr(directory,handles);
     else
         
@@ -221,6 +223,7 @@ else
     data_struct.bnumMeanFlow = bnumMeanFlow;
     data_struct.bnumStdvFlow = bnumStdvFlow;
     data_struct.StdvFromMean = StdvFromMean;
+    data_struct.SEGcrossection = SEGcrossection;
     
     Vel_Time_Res.VplanesAllx = VplanesAllx; %TR vel planes (uninterped)
     Vel_Time_Res.VplanesAlly = VplanesAlly;
@@ -254,40 +257,40 @@ else
     %%%%%%% RERUN WITH KMEANS %%%%%%%%%
     set(handles.TextUpdate,'String','Saving Data With K-Means Segmentation'); drawnow;
     
-    data_structK = [];
-    data_structK.directory = directory;
-    data_structK.area_vol = area_valK;
-    data_structK.diam_vol = diam_valK;
-    data_structK.branchList = branchList;
-    data_structK.flowPerHeartCycle_vol = flowPerHeartCycle_valK;
-    data_structK.maxVel_vol = maxVel_valK;
-    data_structK.velMean_val = velMean_valK;
-    data_structK.nframes = nframes;
-    data_structK.matrix = matrix;
-    data_structK.res = res;
-    data_structK.timeres = timeres;
-    data_structK.VENC = VENC;
-    data_structK.segment = segment;
-    data_structK.PI_vol = PI_valK;
-    data_structK.RI_vol = RI_valK;
-    data_structK.flowPulsatile_vol = flowPulsatile_valK;
-    data_structK.r = r;
-    data_structK.timeMIPcrossection = timeMIPcrossection;
-    data_structK.MAGcrossection = MAGcrossection;
-    data_structK.segment1 = segmentFullK;
-    data_structK.vTimeFrameave = vTimeFrameave;
-    data_structK.Planes = Planes;
-    data_structK.bnumMeanFlow = bnumMeanFlowK;
-    data_structK.bnumStdvFlow = bnumStdvFlowK;
-    data_structK.StdvFromMean = StdvFromMeanK;
+    data_struct = [];
+    data_struct.directory = directory;
+    data_struct.area_vol = area_valK;
+    data_struct.diam_vol = diam_valK;
+    data_struct.branchList = branchList;
+    data_struct.flowPerHeartCycle_vol = flowPerHeartCycle_valK;
+    data_struct.maxVel_vol = maxVel_valK;
+    data_struct.velMean_val = velMean_valK;
+    data_struct.nframes = nframes;
+    data_struct.matrix = matrix;
+    data_struct.res = res;
+    data_struct.timeres = timeres;
+    data_struct.VENC = VENC;
+    data_struct.segment = segment;
+    data_struct.PI_vol = PI_valK;
+    data_struct.RI_vol = RI_valK;
+    data_struct.flowPulsatile_vol = flowPulsatile_valK;
+    data_struct.r = r;
+    data_struct.timeMIPcrossection = timeMIPcrossection;
+    data_struct.MAGcrossection = MAGcrossection;
+    data_struct.segment1 = segmentFullK;
+    data_struct.vTimeFrameave = vTimeFrameave;
+    data_struct.Planes = Planes;
+    data_struct.bnumMeanFlow = bnumMeanFlowK;
+    data_struct.bnumStdvFlow = bnumStdvFlowK;
+    data_struct.StdvFromMean = StdvFromMeanK;
     
-    Vel_Time_ResK.VplanesAllx = VplanesAllx; %TR vel planes (uninterped)
-    Vel_Time_ResK.VplanesAlly = VplanesAlly;
-    Vel_Time_ResK.VplanesAllz = VplanesAllz;
+    Vel_Time_Res.VplanesAllx = VplanesAllx; %TR vel planes (uninterped)
+    Vel_Time_Res.VplanesAlly = VplanesAlly;
+    Vel_Time_Res.VplanesAllz = VplanesAllz;
     
     % Saves processed data in same location as pcvipr.mat files
     caseFilePath = fullfile(directory,['pcviprDataKMEANS_' saveState '.mat']);
-    save(caseFilePath,'data_structK','Vel_Time_ResK','imageData')
+    save(caseFilePath,'data_struct','Vel_Time_Res','imageData')
     
     % This will be the name used for the Excel file
     finalFolder = regexp(directory,filesep,'split');
@@ -381,8 +384,13 @@ end
 LogPoints = true(size(branchList,1),1); %logical array of 1s for areaThresh
 fullCData = flowPerHeartCycle_vol; %initialize fullCData color as flow
 
-steps = [1./(nframes-1) 10./(nframes-1)]; %set so one 'slide' moves to the next slice exactly
-set(handles.VcrossTRslider,'SliderStep',steps);
+if nframes>1
+    steps = [1./(nframes-1) 10./(nframes-1)]; %set so one 'slide' moves to the next slice exactly
+    set(handles.VcrossTRslider,'SliderStep',steps);
+else
+    steps = [1 1]; %set so one 'slide' moves to the next slice exactly
+    set(handles.VcrossTRslider,'SliderStep',steps);
+end 
 
 
 % --- Outputs from this function are returned to the command line.
@@ -1138,52 +1146,11 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
 end
 
 
-
-function updateVcrossTR(handles)
-global dcm_obj hfull segment1 VplanesAllx VplanesAlly VplanesAllz nframes
-global branchList
-
-info_struct = getCursorInfo(dcm_obj);
-if ~isempty(info_struct)
-    ptList = [info_struct.Position];
-    ptList = reshape(ptList,[3,numel(ptList)/3])';
-    pindex = zeros(size(ptList,1),1);
-    % Find cursor point in branchList
-    for n = 1:size(ptList,1)
-        xIdx = find(branchList(:,1) == ptList(n,2));
-        yIdx = find(branchList(xIdx,2) == ptList(n,1));
-        zIdx = find(branchList(xIdx(yIdx),3) == ptList(n,3));
-        pindex(n) = xIdx(yIdx(zIdx));
-    end
-    imdim = sqrt(size(segment1,2)); %side length of cross-section
-
-    Maskcross = segment1(pindex,:);
-    Maskcross = reshape(Maskcross,imdim,imdim);
-
-    %get slice number from slider
-    sliceNum = 1+round( get(hfull.VcrossTRslider,'Value').*(nframes-1) ); 
-
-    v1 = squeeze(VplanesAllx(pindex,:,:));
-    v2 = squeeze(VplanesAlly(pindex,:,:));
-    v3 = squeeze(VplanesAllz(pindex,:,:));
-    VcrossTR = 0.1*(v1 + v2 + v3);
-    normDim = sqrt(size(VcrossTR,1));
-    VcrossTR = reshape(VcrossTR,normDim,normDim,nframes);
-    VcrossTR = imresize(VcrossTR,[imdim imdim],'nearest');
-    minn = min(Maskcross.*VcrossTR,[],'all')*1.1;
-    maxx = max(Maskcross.*VcrossTR,[],'all')*1.1;
-    imshow(VcrossTR(:,:,sliceNum),[minn maxx],'InitialMagnification','fit','Parent',hfull.TRcross)
-    visboundaries(hfull.TRcross,Maskcross,'LineWidth',1)
-end 
-    
-
-
 function txt = myupdatefcn_all(empt,event_obj)
 % Customizes text of data tips
 global Labeltxt branchLabeled PointLabel branchList fullCData
 global flowPulsatile_vol Planes p dcm_obj Ntxt hfull timeMIPcrossection
-global segment1 MAGcrossection vTimeFrameave fig timeres nframes
-global VplanesAllx VplanesAlly VplanesAllz
+global segment1 fig timeres nframes segmentFullK SEGcrossection
 
 info_struct = getCursorInfo(dcm_obj);
 ptList = [info_struct.Position];
@@ -1210,43 +1177,26 @@ index_range(Logical_branch(index_range)) = [];
 set(p,'XData',Planes(pindex,:,2)','YData',Planes(pindex,:,1)','ZData',Planes(pindex,:,3)')
 imdim = sqrt(size(segment1,2)); %side length of cross-section
 
-Maskcross = segment1(pindex,:);
-Maskcross = reshape(Maskcross,imdim,imdim);
-
-%Magnitude TA
-MAGcross = MAGcrossection(pindex,:);
-MAGcross = reshape(MAGcross,imdim,imdim);
-imshow(MAGcross,[],'InitialMagnification','fit','Parent',hfull.MAGcross)
-visboundaries(hfull.MAGcross,Maskcross,'LineWidth',1)
-
-%Complex diffference TA
+%CD
 CDcross = timeMIPcrossection(pindex,:);
 CDcross = reshape(CDcross,imdim,imdim);
-imshow(CDcross,[],'InitialMagnification','fit','Parent', hfull.CDcross)
-visboundaries(hfull.CDcross,Maskcross,'LineWidth',1)
+imshow(CDcross,[],'InitialMagnification','fit','Parent',hfull.MAGcross)
 
-%Velocity TA - through plane
-Vcross = vTimeFrameave(pindex,:);
-Vcross = reshape(Vcross,imdim,imdim);
-imshow(Vcross,[],'InitialMagnification','fit','Parent',hfull.VELcross)
-visboundaries(hfull.VELcross,Maskcross,'LineWidth',1)
+%Threshold Seg
+Threshcross = segment1(pindex,:);
+Threshcross = reshape(Threshcross,imdim,imdim);
+imshow(Threshcross,[],'InitialMagnification','fit','Parent', hfull.CDcross)
 
-%Velocity TR - through plane
-sliceNum = 1+round( get(hfull.VcrossTRslider,'Value').*(nframes-1) ); 
-v1 = squeeze(VplanesAllx(pindex,:,:));
-v2 = squeeze(VplanesAlly(pindex,:,:));
-v3 = squeeze(VplanesAllz(pindex,:,:));
-VcrossTR = 0.1*(v1 + v2 + v3);
-normDim = sqrt(size(VcrossTR,1));
-VcrossTR = reshape(VcrossTR,normDim,normDim,nframes);
-VcrossTR = imresize(VcrossTR,[imdim imdim],'nearest');
-minn = min(Maskcross.*VcrossTR,[],'all')*1.1;
-maxx = max(Maskcross.*VcrossTR,[],'all')*1.1;
-imshow(VcrossTR(:,:,sliceNum),[minn maxx],'InitialMagnification','fit','Parent',hfull.TRcross)
-visboundaries(hfull.TRcross,Maskcross,'LineWidth',1)
+%Kmeans Seg
+Kmeanscross = segmentFullK(pindex,:);
+Kmeanscross = reshape(Kmeanscross,imdim,imdim);
+imshow(Kmeanscross,[],'InitialMagnification','fit','Parent',hfull.VELcross)
 
-% Segmentation mask
-%imshow(Maskcross,[],'InitialMagnification','fit','Parent',hfull.TRcross)
+%Dahan Seg
+SEGcross = SEGcrossection(pindex,:);
+SEGcross = reshape(SEGcross,imdim,imdim);
+SEGcross = SEGcross>0.99;
+imshow(SEGcross,'InitialMagnification','fit','Parent',hfull.TRcross)
 
 
 % Get value of parameter at point and mean within 5pt window
