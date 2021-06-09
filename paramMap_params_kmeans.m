@@ -161,6 +161,7 @@ area_val = zeros(size(Tangent_V,1),1);
 diam_val = zeros(size(Tangent_V,1),1);
 segmentFull = zeros([length(branchList),(width).^2]);
 SE = strel('square', 4);
+%viscosity = .0045;      % in kg/(m s^)
 
 for n = 1:size(Tangent_V,1)
     % Get Planes and normalize
@@ -317,6 +318,9 @@ for j = 1:nframes
     flowPulsatile_val(:,j) = vTimeFramerowMean.*area_val; %TR flow (ml/s)
     maxVelFrame(:,j) = max(vTimeFrame,[],2); %max vel. each frame (cm/s)
     velPulsatile_val(:,j) = vTimeFramerowMean;%mean vel. each frame (cm/s)  
+    % Simple WSS calculation based on the max velocity here and the diam.
+    % Assumes parabolic flow profile (parabolic assumption, in Pa)
+    %wss_simple (:,j) = viscosity*maxVelFrame(:,j) * 0.01 * sqrt(2*pi*maxVelFrame(:,j)*0.01/(flowPulsatile(:,j)*1e-6));          
 end 
 clear COL ROW idCOL Tangent_V v1 v2 v3 vx vy vz x_full y_full z_full x y z
 
