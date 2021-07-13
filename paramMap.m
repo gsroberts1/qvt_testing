@@ -122,8 +122,9 @@ if  fileIndx > 1  %if a pre-processed case is selected
     mkdir( directory , SummaryName);
     SavePath = [directory filesep SummaryName];
     
+    VENC = data_struct.VENC;
     % Create excel files save summary data
-    col_header = ({'Vessel Label', 'Centerline Point', 'Notes', 'Max Velocity < 80cm/s', ...
+    col_header = ({'Vessel Label', 'Centerline Point', 'Notes',['Max Velocity < ' num2str(VENC) 'cm/s'], ...
         'Mean Flow ml/s','Pulsatility Index','Branch Number'});
     xlwrite([SavePath filesep 'SummaryParamTool.xls'],col_header,'Summary_Centerline','A1');
     xlwrite([SavePath filesep 'SummaryParamTool.xls'],get(handles.NamePoint,'String'),'Summary_Centerline','A2');
@@ -139,7 +140,6 @@ if  fileIndx > 1  %if a pre-processed case is selected
     matrix = data_struct.matrix; %image matrix size (pixels)
     res = data_struct.res; %image resolution (mm)
     timeres = data_struct.timeres; %temporal resolution (ms)
-    VENC = data_struct.VENC;
     segment = data_struct.segment; %binary mask (angiogram)
     PI_vol = data_struct.PI_vol; %pulsatility index
     RI_vol = data_struct.RI_vol; %resistivity index
@@ -163,15 +163,16 @@ if  fileIndx > 1  %if a pre-processed case is selected
     set(handles.TextUpdate,'String','Please Select Analysis Plane Location'); drawnow;
 else
     %Load in pcvipr data from scratch
-    if ~isfile(fullfile(directory,'Flow.h5'))
+    if isfile(fullfile(directory,'Flow_reg.h5'))
                 
         [nframes,matrix,res,timeres,VENC,area_vol,diam_vol,flowPerHeartCycle_vol, ...
             maxVel_vol,PI_vol,RI_vol,flowPulsatile_vol,velMean_val, ...
             VplanesAllx,VplanesAlly,VplanesAllz,Planes,branchList,segment,r, ...
             timeMIPcrossection,segment1,vTimeFrameave,MAGcrossection, imageData, ...
             bnumMeanFlow,bnumStdvFlow,StdvFromMean] ...
-            = loadpcvipr(directory,handles);
-    else
+            = loadHDF5_py(directory,handles);
+        
+    elseif isfile(fullfile(directory,'Flow.h5'))
         
         [nframes,matrix,res,timeres,VENC,area_vol,diam_vol,flowPerHeartCycle_vol, ...
             maxVel_vol,PI_vol,RI_vol,flowPulsatile_vol,velMean_val, ...
@@ -179,6 +180,15 @@ else
             timeMIPcrossection,segment1,vTimeFrameave,MAGcrossection, imageData, ...
             bnumMeanFlow,bnumStdvFlow,StdvFromMean] ...
             = loadHDF5(directory,handles);
+        
+    else
+        
+        [nframes,matrix,res,timeres,VENC,area_vol,diam_vol,flowPerHeartCycle_vol, ...
+            maxVel_vol,PI_vol,RI_vol,flowPulsatile_vol,velMean_val, ...
+            VplanesAllx,VplanesAlly,VplanesAllz,Planes,branchList,segment,r, ...
+            timeMIPcrossection,segment1,vTimeFrameave,MAGcrossection, imageData, ...
+            bnumMeanFlow,bnumStdvFlow,StdvFromMean] ...
+            = loadpcvipr(directory,handles);
     end  
     
     directory = uigetdir; %select saving dir 
@@ -241,7 +251,7 @@ else
         
     % Create excel files save summary data
     col_header = ({'Vessel Label', 'Centerline Point', 'Notes', ...
-        'Max Velocity < 80cm/s','Mean Flow ml/s','Pulsatility Index','Branch Label'});
+        ['Max Velocity < ' num2str(VENC) 'cm/s'],'Mean Flow ml/s','Pulsatility Index','Branch Label'});
     xlwrite([SavePath filesep 'SummaryParamTool.xls'],col_header,'Summary_Centerline','A1');
     xlwrite([SavePath filesep 'SummaryParamTool.xls'],get(handles.NamePoint,'String'),'Summary_Centerline','A2');
     
@@ -642,8 +652,8 @@ end
 Labels = [Labels,0,0]; %neighboring CL points (including current)
 CLpoint = find(branchList(pindex,5)==branchActual)-1; %current CL point
 
-% Check if Max Velocity of current 5 planes is less than 80 cm/s
-if sum(maxVel>VENC)==0
+% Check if Max Velocity of current 5 planes is less than Venc
+if sum(maxVel>VENC*0.1)==0
     MaxVel = 'YES';
 else
     MaxVel = 'NO';
