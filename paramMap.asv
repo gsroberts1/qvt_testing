@@ -321,7 +321,7 @@ reducepatch(hpatch,0.7);
 set(hpatch,'FaceColor','white','EdgeColor', 'none','PickableParts','none');
 set(gcf,'color','black');
 axis off tight
-view([1 0.1 0.2]);
+view([-1 .1 0]);
 axis vis3d
 daspect([1 1 1])
 set(gca,'zdir','reverse')
@@ -357,7 +357,7 @@ zlim([ax.ZLim(1)-r ax.ZLim(2)+r])
 
 % Initialize visualization of tangent planes
 hold on
-p = fill3(Planes(1,:,1)',Planes(1,:,2)',Planes(1,:,3)',[1 0 0], ...
+p = fill3(Planes(1,:,2)',Planes(1,:,2)',Planes(1,:,3)',[1 0 0], ...
     'EdgeColor',[1 0 0],'FaceAlpha',0.3,'PickableParts','none', ...
     'Parent', fig.CurrentAxes); %fill3(pty',ptx',ptz','r') for isosurface
 hold off
@@ -1207,7 +1207,7 @@ index_range(index_range>size(branchList,1)) = [];
 index_range(Logical_branch(index_range)) = [];
 
 % Update Cross-sectional planes for points
-set(p,'XData',Planes(pindex,:,1)','YData',Planes(pindex,:,2)','ZData',Planes(pindex,:,3)')
+set(p,'XData',Planes(pindex,:,2)','YData',Planes(pindex,:,1)','ZData',Planes(pindex,:,3)')
 imdim = sqrt(size(segment1,2)); %side length of cross-section
 
 Maskcross = segment1(pindex,:);
@@ -1288,7 +1288,7 @@ if branchLabeled ~= bnum
     textint = 0:5:length(branchActual)-1;
     numString_val = num2str(textint);
     numString_val = strsplit(numString_val);
-    Ntxt = text(branchActual(textint+1,1),branchActual(textint+1,2), ...
+    Ntxt = text(branchActual(textint+1,2),branchActual(textint+1,1), ...
         branchActual(textint+1,3),numString_val,'Color','w','FontSize',10,...
         'HitTest','off','PickableParts','none','Parent',fig.Children(2));
 end

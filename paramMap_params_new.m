@@ -216,7 +216,7 @@ for n = 1:size(Tangent_V,1)
     %segment = imopen(segment,ones(3,3)); %morphological opening
     
     % Vessel area measurements
-    dArea = (res/10)^2; %pixel size (cm^2)
+    dArea = (res/10).^2; %pixel size (cm^2)
     area_val(n) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
     
     segmentFull(n,:) = segment(:);
