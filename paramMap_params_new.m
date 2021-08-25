@@ -192,7 +192,9 @@ for n = 1:size(Tangent_V,1)
     conn = 6; %connectivity (i.e. 6-pt)
     segment = bwareaopen(segment,areaThresh,conn); %inverse fill holes
     erodeFactor = 1;
-    segment = imerode(segment,strel('disk',erodeFactor)); %erode segmentation
+    %if segmentIsNotTooSmall
+        segment = imerode(segment,strel('disk',erodeFactor)); %erode segmentation
+    %end
     % Can compare in-plane segmentation to initial global segmentation. 
     % To do this, the 'segment' variable from 'loadpcvipr' needs to be 
     % passed as an arg. I did this by adding 'segment_old' as 2nd input
@@ -217,7 +219,7 @@ for n = 1:size(Tangent_V,1)
     
     % Vessel area measurements
     dArea = (res/10).^2; %pixel size (cm^2)
-    area_val(n) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
+    area_val(n,1) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
     
     segmentFull(n,:) = segment(:);
     
@@ -229,7 +231,7 @@ for n = 1:size(Tangent_V,1)
     [xLoc,yLoc] = find(bwperim(segment)); %get perimeter
     D = pdist2([xLoc,yLoc],[xLoc,yLoc]); %distance b/w perimeter points
     Rout = max(D(:))/2; %radius of largest outer circle
-    diam_val(n) = Rin^2/Rout^2; %ratio of areas
+    diam_val(n,1) = Rin^2/Rout^2; %ratio of areas
     diam_val(diam_val==inf) = 0;
     %diam_val(n) = 2*sqrt(area_val(n)/pi); %equivalent diameter
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -287,8 +289,8 @@ for n = 1:size(Tangent_V,1)
     
     % Vessel area measurements
     dArea = (res/10)^2; %pixel size (cm^2)
-    area_valK(n) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
-    area_valK = area_valK';
+    area_valK(n,1) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
+    %area_valK = area_valK';
     
     segmentFullK(n,:) = segment(:);
     
@@ -300,9 +302,9 @@ for n = 1:size(Tangent_V,1)
     [xLoc,yLoc] = find(bwperim(segment)); %get perimeter
     D = pdist2([xLoc,yLoc],[xLoc,yLoc]); %distance b/w perimeter points
     Rout = max(D(:))/2; %radius of largest outer circle
-    diam_valK(n) = Rin^2/Rout^2; %ratio of areas
+    diam_valK(n,1) = Rin^2/Rout^2; %ratio of areas
     diam_valK(diam_valK==inf) = 0;
-    diam_valK = diam_valK';
+    %diam_valK = diam_valK';
     %diam_val(n) = 2*sqrt(area_val(n)/pi); %equivalent diameter
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
