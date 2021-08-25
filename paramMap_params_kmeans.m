@@ -1,9 +1,7 @@
 function [area_val,diam_val,flowPerHeartCycle_val,maxVel_val,PI_val,RI_val,flowPulsatile_val,...
     velMean_val,VplanesAllx,VplanesAlly,VplanesAllz,r,timeMIPcrossection,segmentFull,...
-    vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes, ...
-    area_valK,diam_valK,flowPerHeartCycle_valK,maxVel_valK,PI_valK,RI_valK,flowPulsatile_valK,...
-    velMean_valK,segmentFullK,bnumMeanFlowK,bnumStdvFlowK,StdvFromMeanK] ...
-    = paramMap_params_new(filetype,branchList,matrix,timeMIP,vMean, ...
+    vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes] ...
+    = paramMap_params_kmeans(filetype,branchList,matrix,timeMIP,vMean, ...
     BGPCdone,directory,nframes,res,MAG,IDXstart,IDXend,handles)
 %PARAMMAP_PARAMS_NEW: Create tangent planes and calculate hemodynamics
 %   Used by: loadpcvipr.m
@@ -162,77 +160,10 @@ set(handles.TextUpdate,'String','Performing In-Plane Segmentation');drawnow;
 area_val = zeros(size(Tangent_V,1),1);
 diam_val = zeros(size(Tangent_V,1),1);
 segmentFull = zeros([length(branchList),(width).^2]);
+SE = strel('square', 4);
+%viscosity = .0045;      % in kg/(m s^)
 
 for n = 1:size(Tangent_V,1)
-    
-    %%%%%% SLIDING THRESHOLD %%%%%%
-    % Get Planes and normalize
-    cdSLICE = reshape(timeMIPcrossection(n,:),[(width),(width)]);
-    temp = cdSLICE - min(cdSLICE); %shift the minimum to 0
-    cdSLICE = temp./max(temp(:)); %now normalize from 0 to 1
-    
-    velSLICE = reshape(vTimeFrameave(n,:),[(width),(width)]);
-    temp = velSLICE - min(velSLICE);
-    velSLICE = temp./max(temp(:));
-    
-    magSLICE = reshape(MAGcrossection(n,:),[(width),(width)]);
-    temp = magSLICE - min(magSLICE);
-    magSLICE = temp./max(temp(:));
-    
-    weightIMS = [.2 .8 .2]; % Weights = [Mag CD Vel]
-    weightIMAGE = (weightIMS(1).*magSLICE) + (weightIMS(2).*cdSLICE) + (weightIMS(3).*velSLICE);
-    
-    step = 0.001;
-    UPthresh = 0.8;
-    SMf = 90; %smoothing factor
-    shiftHM_flag = 0; %do not shift by FWHM
-    medFilt_flag = 1; %flag for median filtering of CD image
-    [~,segment] = slidingThreshold(weightIMAGE,step,UPthresh,SMf,shiftHM_flag,medFilt_flag);
-    areaThresh = round(sum(segment(:)).*0.05); %minimum area to keep
-    conn = 6; %connectivity (i.e. 6-pt)
-    segment = bwareaopen(segment,areaThresh,conn); %inverse fill holes
-    % Can compare in-plane segmentation to initial global segmentation. 
-    % To do this, the 'segment' variable from 'loadpcvipr' needs to be 
-    % passed as an arg. I did this by adding 'segment_old' as 2nd input
-    %segment_old = interp3(y,x,z,single(segment_old),y_full(:),x_full(:),z_full(:),'linear',0);
-    %segment_old = reshape(segment_old,[length(branchList),(width).^2]);
-    %segSlice = reshape(segment_old(n,:),[(width),(width)]);
-    %figure; imshow(imbinarize(segSlice));
-    %figure; imshow(segment);
-    
-    % Remove all segments not closest to the center
-    s = regionprops(segment,'centroid'); %centroids of unique lbls  
-    CenterIm = [size(segment,1)/2,size(segment,2)/2]; %loc image center
-    Centroids = reshape([s(:).Centroid],[2,length([s(:).Centroid])/2])';
-    DisCen = sqrt(sum((Centroids - repmat(CenterIm,[size(Centroids,1),1])).^2,2));
-    [~,CenIdx]  = min(DisCen); %find centroid closest to center
-
-    % Fill in the holes and clean up
-    [L,Num] = bwlabel(segment); %find centroid index
-    LabUse = 1:Num;
-    segment = L==LabUse(CenIdx); %cut out other centroids
-    %segment = imopen(segment,ones(3,3)); %morphological opening
-    
-    % Vessel area measurements
-    dArea = (res/10).^2; %pixel size (cm^2)
-    area_val(n,1) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
-    
-    segmentFull(n,:) = segment(:);
-    
-    % New with ratios of areas. Ratio of smallest inner circle over
-    % largest encompassing outer circle (assume circular area). Measure of
-    % circularity of vessel (ratio =1 is circle,ratio<1 is irregular shape)
-    D = bwdist(~segment); %euclidean distance transform
-    Rin = max(D(:)); %distance from center to closest non-zero entry
-    [xLoc,yLoc] = find(bwperim(segment)); %get perimeter
-    D = pdist2([xLoc,yLoc],[xLoc,yLoc]); %distance b/w perimeter points
-    Rout = max(D(:))/2; %radius of largest outer circle
-    diam_val(n,1) = Rin^2/Rout^2; %ratio of areas
-    diam_val(diam_val==inf) = 0;
-    %diam_val(n) = 2*sqrt(area_val(n)/pi); %equivalent diameter
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    %%%%%%%%%%% KMEANS %%%%%%%%%%%%%%
     % Get Planes and normalize
     clust = horzcat(timeMIPcrossection(n,:)',vTimeFrameave(n,:)');
     [idx,~] = kmeans(clust,2);
@@ -252,7 +183,6 @@ for n = 1:size(Tangent_V,1)
     end
         
     % Remove all segments not closest to the center
-    SE = strel('square', 4);
     segment = imerode(segment,SE);     
     s = regionprops(logical(segment),'centroid');    
     CenterIm = [size(segment,1)/2,size(segment,2)/2];
@@ -285,10 +215,9 @@ for n = 1:size(Tangent_V,1)
     
     % Vessel area measurements
     dArea = (res/10)^2; %pixel size (cm^2)
-    area_valK(n,1) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
-    %area_valK = area_valK';
+    area_val(n) = sum(segment(:))*dArea*((2*r+1)/(2*r*InterpVals+1))^2;
     
-    segmentFullK(n,:) = segment(:);
+    segmentFull(n,:) = segment(:);
     
     % New with ratios of areas. Ratio of smallest inner circle over
     % largest encompassing outer circle (assume circular area). Measure of
@@ -298,30 +227,20 @@ for n = 1:size(Tangent_V,1)
     [xLoc,yLoc] = find(bwperim(segment)); %get perimeter
     D = pdist2([xLoc,yLoc],[xLoc,yLoc]); %distance b/w perimeter points
     Rout = max(D(:))/2; %radius of largest outer circle
-    diam_valK(n,1) = Rin^2/Rout^2; %ratio of areas
-    diam_valK(diam_valK==inf) = 0;
-    %diam_valK = diam_valK';
+    diam_val(n) = Rin^2/Rout^2; %ratio of areas
+    diam_val(diam_val==inf) = 0;
     %diam_val(n) = 2*sqrt(area_val(n)/pi); %equivalent diameter
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 end
 clear cdSLICE magSLICE temp segment weightIMAGE dArea L LabUse CenIdx Num
 
 %% Extract Time-Resolved Velocities
-
 % Initialize time-resolved hemodynamic parameters 
-% Sliding Threshold
 flowPulsatile_val = zeros(size(area_val,1),nframes);
 maxVelFrame = zeros(size(area_val,1),nframes);
 velPulsatile_val = zeros(size(area_val,1),nframes);
 bnumMeanFlow = zeros(max(branchList(:,4)),1);
 bnumStdvFlow = zeros(max(branchList(:,4)),1);
-% Kmeans
-flowPulsatile_valK = zeros(size(area_valK,1),nframes);
-maxVelFrameK = zeros(size(area_valK,1),nframes);
-velPulsatile_valK = zeros(size(area_valK,1),nframes);
-bnumMeanFlowK = zeros(max(branchList(:,4)),1);
-bnumStdvFlowK = zeros(max(branchList(:,4)),1);
      
 % Initialize time-resolved velocity matrix (not interpolated yet)
 VplanesAllx = zeros([length(branchList),(r.*2+1).^2 nframes],'single');
@@ -394,29 +313,25 @@ for j = 1:nframes
     VplanesAlly(:,:,j) = v2(:,idCOL);
     VplanesAllz(:,:,j) = v3(:,idCOL);
 
-    % Sliding Threshold
     vTimeFrame = segmentFull.*(0.1*(v1 + v2 + v3)); %masked velocity (cm/s)
     vTimeFramerowMean = sum(vTimeFrame,2) ./ sum(vTimeFrame~=0,2); %mean vel
     flowPulsatile_val(:,j) = vTimeFramerowMean.*area_val; %TR flow (ml/s)
     maxVelFrame(:,j) = max(vTimeFrame,[],2); %max vel. each frame (cm/s)
     velPulsatile_val(:,j) = vTimeFramerowMean;%mean vel. each frame (cm/s)  
-    % Kmeans
-    vTimeFrameK = segmentFullK.*(0.1*(v1 + v2 + v3)); %masked velocity (cm/s)
-    vTimeFramerowMeanK = sum(vTimeFrameK,2) ./ sum(vTimeFrameK~=0,2); %mean vel
-    flowPulsatile_valK(:,j) = vTimeFramerowMeanK.*area_valK; %TR flow (ml/s)
-    maxVelFrameK(:,j) = max(vTimeFrameK,[],2); %max vel. each frame (cm/s)
-    velPulsatile_valK(:,j) = vTimeFramerowMeanK;%mean vel. each frame (cm/s)  
+    % Simple WSS calculation based on the max velocity here and the diam.
+    % Assumes parabolic flow profile (parabolic assumption, in Pa)
+    %wss_simple (:,j) = viscosity*maxVelFrame(:,j) * 0.01 * sqrt(2*pi*maxVelFrame(:,j)*0.01/(flowPulsatile(:,j)*1e-6));          
 end 
 clear COL ROW idCOL Tangent_V v1 v2 v3 vx vy vz x_full y_full z_full x y z
 
 %% Compute Hemodynamic Parameters
-
-%%%%%% SLIDING TRESHOLD %%%%%%%%%%
 maxVel_val = max(maxVelFrame,[],2); %max in-plane veloc. for all frames
 flowPerHeartCycle_val = sum(flowPulsatile_val,2)./(nframes); %TA flow (ml/s)
 velMean_val = sum(velPulsatile_val,2)./(nframes); %TA in-plane velocities
+
 % Pulsatility Index (PI) = (systolic vel - diastolic vel)/(mean vel)
 PI_val = abs(max(flowPulsatile_val,[],2) - min(flowPulsatile_val,[],2))./mean(flowPulsatile_val,2);
+
 % Resistivity Index (RI) = (systolic vel - diastolic vel)/(systolic vel)
 RI_val = abs(max(flowPulsatile_val,[],2) - min(flowPulsatile_val,[],2))./max(flowPulsatile_val,[],2);
 
@@ -445,40 +360,6 @@ for n = 1:max(branchList(:,4))
 end
 StdvFromMean = StdvFromMean - min(StdvFromMean(:)); %shift the minimum to 0
 StdvFromMean = StdvFromMean./max(StdvFromMean(:)); %normalize range 0-1
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%% SLIDING TRESHOLD %%%%%%%%%%
-maxVel_valK = max(maxVelFrameK,[],2); %max in-plane veloc. for all frames
-flowPerHeartCycle_valK = sum(flowPulsatile_valK,2)./(nframes); %TA flow (ml/s)
-velMean_valK = sum(velPulsatile_valK,2)./(nframes); %TA in-plane velocities
-% Pulsatility Index (PI) = (systolic vel - diastolic vel)/(mean vel)
-PI_valK = abs(max(flowPulsatile_valK,[],2) - min(flowPulsatile_valK,[],2))./mean(flowPulsatile_valK,2);
-% Resistivity Index (RI) = (systolic vel - diastolic vel)/(systolic vel)
-RI_valK = abs(max(flowPulsatile_valK,[],2) - min(flowPulsatile_valK,[],2))./max(flowPulsatile_valK,[],2);
 
-% Mean and standard deviation of flow along all branches
-for i=1:max(branchList(:,4))
-    idx1 = branchList(:,4)==i; %find all points along branch
-    bnumMeanFlowK(i) = mean(flowPerHeartCycle_valK(idx1)); %mean TA flow
-    bnumStdvFlowK(i) = std(flowPerHeartCycle_valK(idx1)); %stdv TA flow
-end 
-
-% Get coefficient of variation (stdv from mean) for all points along branch
-% Looks at local stdv and mean (window width of 5).
-StdvFromMeanK = flowPerHeartCycle_valK;
-for n = 1:max(branchList(:,4))
-    IDbranch = find(branchList(:,4)== n); %extract points for branch n
-    % Calculate near branch start
-    StdvFromMeanK(IDbranch(1)) = std(flowPerHeartCycle_valK(IDbranch(1:3))) ./ abs(mean(flowPerHeartCycle_valK(IDbranch(1:3))));
-    StdvFromMeanK(IDbranch(2)) = std(flowPerHeartCycle_valK(IDbranch(1:4))) ./ abs(mean(flowPerHeartCycle_valK(IDbranch(1:4))));
-    % Calculate for middle of branch (window width of 5)
-    for m = 1:numel(IDbranch)-4
-        StdvFromMeanK(IDbranch(m+2)) = std(flowPerHeartCycle_valK(IDbranch(m:m+4)))./abs(mean(flowPerHeartCycle_valK(IDbranch(m:m+4))));
-    end
-    % Calculate near branch end
-    StdvFromMeanK(IDbranch(end-1)) = std(flowPerHeartCycle_valK(IDbranch(end-3:end)))./abs(mean(flowPerHeartCycle_valK(IDbranch(end-3:end))));
-    StdvFromMeanK(IDbranch(end)) = std(flowPerHeartCycle_valK(IDbranch(end-2:end)))./abs(mean(flowPerHeartCycle_valK(IDbranch(end-2:end))));
-end
-StdvFromMeanK = StdvFromMeanK - min(StdvFromMeanK(:)); %shift the minimum to 0
-StdvFromMeanK = StdvFromMeanK./max(StdvFromMeanK(:)); %normalize range 0-1
 end
