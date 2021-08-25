@@ -63,6 +63,7 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
+movegui(handles.ParameterTool,'northwest'); %move to top left
 set(handles.TextUpdate,'String','Load in a 4D Flow Dataset');
 
 
@@ -77,6 +78,7 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
+
 
 % UIWAIT makes paramMap wait for user response (see UIRESUME)
 % uiwait(handles.ParameterTool);
@@ -311,6 +313,7 @@ set(handles.AreaThreshSlide, 'Value',0);
 
 % Initialize visualization
 fig = figure(1); cla
+set(fig,'Position',[1005 438 904 667])
 hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0); %bw iso angiogram
 reducepatch(hpatch,0.7);
 set(hpatch,'FaceColor','white','EdgeColor', 'none','PickableParts','none');
@@ -583,7 +586,7 @@ global vesselsAnalyzed allNotes
 
 vesselsAnalyzed{end+1} = PointLabel;
 
-set(handles.TextUpdate,'String','Saving Data.');drawnow;
+set(handles.TextUpdate,'String','Saving Data');drawnow;
 SaveRow =  sprintf('B%i',get(handles.NamePoint,'Value')+1); %match excel row to vessel name
 
 info_struct = getCursorInfo(dcm_obj);
@@ -651,11 +654,11 @@ else
     MaxVel = 'NO';
 end
 
-if isempty(allNotes{get(handles.NamePoint,'Value')+1})
+if isempty(allNotes{get(handles.NamePoint,'Value')})
     Notes = get(handles.NoteBox,'String'); %get any notes from notebox
     SummaryInfo = {CLpoint,Notes,MaxVel,flowPerHeartCycle(end-1),PI(end-1),bnum};
     xlwrite([SavePath filesep 'SummaryParamTool.xls'],SummaryInfo,'Summary_Centerline',SaveRow);
-    set(handles.TextUpdate,'String','Saving Data..');drawnow;
+    set(handles.TextUpdate,'String','Saving Data.');drawnow;
 end 
 
 % save time-averaged
@@ -666,7 +669,7 @@ time_avg = vertcat(col_header,num2cell(real(horzcat(Labels',...
 time_avg{end-1,1} = 'Mean';
 time_avg{end,1} = 'Standard Deviation';
 xlwrite([SavePath filesep 'SummaryParamTool.xls'],time_avg,[savename '_T_averaged']);
-set(handles.TextUpdate,'String','Saving Data...');drawnow;
+set(handles.TextUpdate,'String','Saving Data..');drawnow;
 
 % save time-resolved
 spaces = repmat({''},1,nframes-1);
@@ -677,19 +680,7 @@ time_resolve = vertcat(col_header2, col_header3, num2cell(real(horzcat(Labels',f
 time_resolve{end-1,1} = 'Mean';
 time_resolve{end,1} = 'Standard Deviation';
 xlwrite([SavePath filesep 'SummaryParamTool.xls'],time_resolve,[savename '_T_resolved']);
-set(handles.TextUpdate,'String','Saving Data....');drawnow;
-
-% Save: interactive window, main GUI , and cross-section images as montage
-fig.Color = 'black';
-fig.InvertHardcopy = 'off';
-img = getframe(fig);
-imwrite(img.cdata, [ SavePath filesep savename '_3dview.jpg']);
-
-fig2 = handles.ParameterTool;
-fig2.Color = [0.94,0.94,0.94];
-fig2.InvertHardcopy = 'off';
-saveas(fig2,[ SavePath filesep savename '_GUIview.jpg'])
-set(handles.TextUpdate,'String','Saving Data.....');drawnow;
+set(handles.TextUpdate,'String','Saving Data...');drawnow;
 
 % Get the dimensions of the sides of the slices created
 imdim = sqrt(size(segment1,2));
@@ -728,7 +719,7 @@ subplot('position', [0 0 1 1])
 montage(FinalImage, 'Size', [subL 4]);
 saveas(f1,[ SavePath filesep savename '_Slicesview.jpg'])
 close(f1)
-set(handles.TextUpdate,'String','Saving Data......');drawnow;
+set(handles.TextUpdate,'String','Saving Data....');drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -773,10 +764,11 @@ else
     MaxVel = 'NO';
 end
 
-if isempty(allNotes{get(handles.NamePoint,'Value')+1})
+if isempty(allNotes{get(handles.NamePoint,'Value')})
     Notes = get(handles.NoteBox,'String'); %get any notes from notebox
     SummaryInfo = {CLpoint,Notes,MaxVel,flowPerHeartCycle(end-1),PI(end-1),bnum};
     xlwrite([SavePathK filesep 'SummaryParamTool.xls'],SummaryInfo,'Summary_Centerline',SaveRow);
+    set(handles.TextUpdate,'String','Saving Data.....');drawnow;
 end 
 
 % save time-averaged
@@ -787,6 +779,7 @@ time_avg = vertcat(col_header,num2cell(real(horzcat(Labels',...
 time_avg{end-1,1} = 'Mean';
 time_avg{end,1} = 'Standard Deviation';
 xlwrite([SavePathK filesep 'SummaryParamTool.xls'],time_avg,[savename '_T_averaged']);
+set(handles.TextUpdate,'String','Saving Data......');drawnow;
 
 % save time-resolved
 spaces = repmat({''},1,nframes-1);
@@ -797,6 +790,19 @@ time_resolve = vertcat(col_header2, col_header3, num2cell(real(horzcat(Labels',f
 time_resolve{end-1,1} = 'Mean';
 time_resolve{end,1} = 'Standard Deviation';
 xlwrite([SavePathK filesep 'SummaryParamTool.xls'],time_resolve,[savename '_T_resolved']);
+set(handles.TextUpdate,'String','Saving Data.......');drawnow;
+
+% Save: interactive window, main GUI , and cross-section images as montage
+fig.Color = 'black';
+fig.InvertHardcopy = 'off';
+img = getframe(fig);
+imwrite(img.cdata, [ SavePath filesep savename '_3dview.jpg']);
+
+fig2 = handles.ParameterTool;
+fig2.Color = [0.94,0.94,0.94];
+fig2.InvertHardcopy = 'off';
+saveas(fig2,[ SavePath filesep savename '_GUIview.jpg'])
+set(handles.TextUpdate,'String','Saving Data........');drawnow;
 
 % Get the dimensions of the sides of the slices created
 imdim = sqrt(size(segmentFullK,2));
@@ -860,7 +866,7 @@ global SavePath SavePathK allNotes
 set(handles.TextUpdate,'String','Saving Note for Current Vessel');drawnow;
 SaveLoc =  sprintf('C%i',get(handles.NamePoint,'Value')+1);
 Notes = {get(handles.NoteBox,'String')}; %get any notes from notebox
-allNotes(get(handles.NamePoint,'Value')+1) = Notes;
+allNotes(get(handles.NamePoint,'Value')) = Notes;
 xlwrite([SavePath filesep 'SummaryParamTool.xls'],Notes,'Summary_Centerline',SaveLoc);
 xlwrite([SavePathK filesep 'SummaryParamTool.xls'],Notes,'Summary_Centerline',SaveLoc);
 set(handles.NoteBox,'String',' ');

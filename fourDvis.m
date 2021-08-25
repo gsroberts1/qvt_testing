@@ -22,7 +22,7 @@ function varargout = fourDvis(varargin)
 
 % Edit the above text to modify the response to help fourDvis
 
-% Last Modified by GUIDE v2.5 19-Jun-2020 11:04:07
+% Last Modified by GUIDE v2.5 25-Aug-2021 12:24:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -52,7 +52,7 @@ function fourDvis_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to fourDvis (see VARARGIN)
 global PlanesVis branchListVis segmentVis directory res caseFilePath
-global pVis figVis dcm_obj_vis
+global pVis figVis dcm_obj_vis camH
 
 PlanesVis = varargin{1}; %corners for all planes
 branchListVis = varargin{2}; %locations/labels for all vessel points
@@ -66,6 +66,7 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
+movegui(handles.figure1,'southwest'); %move to bottom left
 
 
 %%% Loading Data
@@ -95,6 +96,7 @@ clear imageData
 
 %%% Create magnitude image planes for slice visualizations
 figVis = figure('CloseRequestFcn',@my_closereq); %open second figure
+set(figVis,'Position',[1006 43 902 692]);
 
 [X,Y,Z] = meshgrid(1:size(handles.MAG,1),1:size(handles.MAG,2),1:size(handles.MAG,3)); 
 hold on     
@@ -139,7 +141,7 @@ view([1 0.1 0.1]); %set to sag.(offset 0.1 to see cor. and ax. MAG planes)
 axis vis3d
 daspect([1 1 1]) %set aspect ratio so not elongated
 set(gca,'zdir','reverse') %flip angiogram upside down (correct orientation)
-camlight headlight; %make isosurface shine
+camH = camlight('headlight'); %make isosurface shine
 lighting gouraud %smooth shine
 
 [X,Y,Z] = meshgrid(1:size(handles.MAG,2),1:size(handles.MAG,1),1:size(handles.MAG,3)); 
@@ -258,7 +260,7 @@ function addmask_Callback(hObject, eventdata, handles)
 % hObject    handle to addmask (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global figVis PlanesVis branchListVis res
+global figVis PlanesVis branchListVis res camH
 figure(figVis)
 
 %%% Read Mimics segmentation files
@@ -1328,3 +1330,27 @@ Planes(:,:,1) = [x_full(:,1),x_full(:,width-InterpVals),x_full(:,end),x_full(:,e
 Planes(:,:,2) = [y_full(:,1),y_full(:,width-InterpVals),y_full(:,end),y_full(:,end-width+1)];
 Planes(:,:,3) = [z_full(:,1),z_full(:,width-InterpVals),z_full(:,end),z_full(:,end-width+1)];
 
+
+
+% --- Executes during object creation, after setting all properties.
+function camlight_popup_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes on selection change in camlight_popup.
+function camlight_popup_Callback(hObject, eventdata, handles)
+global camH
+val = get(handles.camlight_popup, 'Value');
+str = get(handles.camlight_popup, 'String');
+switch str{val}
+    case 'Headlight'
+        camH = camlight(camH,'headlight');
+    case 'Left'
+        camH = camlight(camH,'left');
+    case 'Right'
+        camH = camlight(camH,'right');
+    case 'Taillight'
+        camH = camlight(camH,180,20);
+end 
+guidata(hObject, handles);
