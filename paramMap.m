@@ -584,8 +584,6 @@ global area_valK diam_valK flowPerHeartCycle_valK maxVel_valK SavePathK
 global velMean_valK PI_valK RI_valK flowPulsatile_valK segmentFullK
 global vesselsAnalyzed allNotes
 
-vesselsAnalyzed{end+1} = PointLabel;
-
 set(handles.TextUpdate,'String','Saving Data');drawnow;
 SaveRow =  sprintf('B%i',get(handles.NamePoint,'Value')+1); %match excel row to vessel name
 
@@ -593,6 +591,8 @@ info_struct = getCursorInfo(dcm_obj);
 ptList = [info_struct.Position];
 ptList = reshape(ptList,[3,numel(ptList)/3])';
 pindex = zeros(size(ptList,1),1);
+
+vesselsAnalyzed{end+1} = PointLabel;
 
 for n = 1:size(ptList,1)
     xIdx = find(branchList(:,1) == ptList(n,1));
@@ -796,12 +796,12 @@ set(handles.TextUpdate,'String','Saving Data.......');drawnow;
 fig.Color = 'black';
 fig.InvertHardcopy = 'off';
 img = getframe(fig);
-imwrite(img.cdata, [ SavePath filesep savename '_3dview.jpg']);
+imwrite(img.cdata, [ SavePathK filesep savename '_3dview.jpg']);
 
 fig2 = handles.ParameterTool;
 fig2.Color = [0.94,0.94,0.94];
 fig2.InvertHardcopy = 'off';
-saveas(fig2,[ SavePath filesep savename '_GUIview.jpg'])
+saveas(fig2,[ SavePathK filesep savename '_GUIview.jpg'])
 set(handles.TextUpdate,'String','Saving Data........');drawnow;
 
 % Get the dimensions of the sides of the slices created
