@@ -63,7 +63,9 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
-movegui(handles.ParameterTool,'northwest'); %move to top left
+%movegui(handles.ParameterTool,'northwest'); %move to top left (WORK)
+set(handles.ParameterTool,'Position',[276 32 190 48]); %HOME
+
 set(handles.TextUpdate,'String','Load in a 4D Flow Dataset');
 
 
@@ -313,7 +315,9 @@ set(handles.AreaThreshSlide, 'Value',0);
 
 % Initialize visualization
 fig = figure(1); cla
-set(fig,'Position',[1005 438 904 667])
+%set(fig,'Position',[1005 438 904 667]); %WORK
+set(fig,'Position',[2366 295 904 683]); %HOME
+
 hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0); %bw iso angiogram
 reducepatch(hpatch,0.7);
 set(hpatch,'FaceColor','white','EdgeColor', 'none','PickableParts','none');
