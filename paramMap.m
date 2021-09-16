@@ -63,10 +63,15 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
-%movegui(handles.ParameterTool,'northwest'); %move to top left (WORK)
-set(handles.ParameterTool,'Position',[276 32 190 48]); %HOME
 
 set(handles.TextUpdate,'String','Load in a 4D Flow Dataset');
+
+% --- Outputs from this function are returned to the command line.
+function varargout = paramMap_OutputFcn(hObject, eventdata, handles)
+varargout{1} = handles.output;
+set(hObject,'Visible','on');
+set(handles.ParameterTool,'Position',[1 41 190 48]) %move to top left (WORK)
+%set(handles.ParameterTool,'Position',[276 32 190 48]); %HOME
 
 
 % --- Executes on button press in LoadData.
@@ -315,8 +320,8 @@ set(handles.AreaThreshSlide, 'Value',0);
 
 % Initialize visualization
 fig = figure(1); cla
-%set(fig,'Position',[1005 438 904 667]); %WORK
-set(fig,'Position',[2366 295 904 683]); %HOME
+set(fig,'Position',[963 374 946 731]); %WORK
+%set(fig,'Position',[2366 295 904 683]); %HOME
 
 hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0); %bw iso angiogram
 reducepatch(hpatch,0.7);
@@ -391,11 +396,6 @@ fullCData = flowPerHeartCycle_valK; %initialize fullCData color as flow
 
 steps = [1./(nframes-1) 10./(nframes-1)]; %set so one 'slide' moves to the next slice exactly
 set(handles.VcrossTRslider,'SliderStep',steps);
-
-
-% --- Outputs from this function are returned to the command line.
-function varargout = paramMap_OutputFcn(hObject, eventdata, handles)
-varargout{1} = handles.output;
 
 
 % --- Executes on selection change in parameter_choice.
