@@ -160,7 +160,7 @@ set(handles.TextUpdate,'String','Performing In-Plane Segmentation');drawnow;
 area_val = zeros(size(Tangent_V,1),1);
 diam_val = zeros(size(Tangent_V,1),1);
 segmentFull = zeros([length(branchList),(width).^2]);
-SE = strel('square', 4);
+SE = strel('square', 3);
 
 for n = 1:size(Tangent_V,1)
     % Get Planes and normalize
